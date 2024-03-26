@@ -1,52 +1,78 @@
 // server.js (or index.js)
-
-const express = require('express');
-const multer = require('multer');
-const cloudinary = require('cloudinary').v2;
+const dotenv = require("dotenv");
+const express = require("express");
+const multer = require("multer");
+const cors = require("cors");
 
 const app = express();
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+dotenv.config({path: "../.env"});
+
+const uploadOnCloudinary = require("./cloudinary").uploadOnCloudinary;
 
 // Configure Multer to save files to the public/temp folder
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'public/temp');
+    cb(null, "./public/temp");
   },
   filename: function (req, file, cb) {
-    cb(null, file.originalname);
-  }
+    let uploadFilename = file.originalname;
+    uploadFilename =
+      uploadFilename.split(".")[0] +
+      "-" +
+      Math.floor(Date.now() / 1000) +
+      "." +
+      file.originalname.split(".")[1];
+    console.log("uploadFilename is", uploadFilename);
+    cb(null, uploadFilename);
+  },
 });
 const upload = multer({ storage: storage });
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_CLOUD_NAME
-});
-
 let asyncHandler = (requestHandler) => {
   return (req, res, next) => {
-    Promise.resolve(requestHandler(req, res, next))
-    .catch(next);
+    Promise.resolve(requestHandler(req, res, next)).catch(next);
   };
 };
 
-// Endpoint for uploading image
-app.post('/upload', upload.single('image'), async (req, res) => {
+let uploadHandler = asyncHandler(async (req, res) => {
   try {
+    console.log("code reached the uploadHandler");
+    let file_path = req.file?.avatar[0]?.path;
+    if (!file_path) {
+      throw new ApiError(400, "No file found its required");
+    }
     // Upload image to Cloudinary
-    const result = await cloudinary.uploader.upload(req.file.path);
-
-    // Once uploaded, you may want to delete the temporary file
-    fs.unlinkSync(req.file.path);
+    const avatar = await uploadOnCloudinary(file_path);
+    console.log("avatar", avatar);
 
     // Send response with Cloudinary image URL
-    res.json({ imageUrl: result.secure_url });
+    res.json({ imageUrl: avatar.url });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to upload image' });
+    console.error("Error in the uploadHandler",error);
+    res.status(500).json({ error: "Failed to upload image" });
   }
 });
+// Endpoint for uploading image
+
+app.post(
+  "/upload",
+  (req, res, next) => {
+    console.log("req.file is", req.file, req.files);
+    next();
+  },
+  upload.single("image"),
+  uploadHandler
+);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port http://localhost:${PORT}`));
+app.listen(PORT, () =>
+  console.log(`Server running on port http://localhost:${PORT}`)
+);
+
+app.get("/", (req, res) => {
+  res.send("Hello img server!");
+});
