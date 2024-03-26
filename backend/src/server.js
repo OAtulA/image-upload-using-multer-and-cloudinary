@@ -33,7 +33,7 @@ const uploadOnCloudinary = require("./cloudinary").uploadOnCloudinary;
 // });
 // const upload = multer({ storage: storage });
 
-const upload = multer({ dest: "./uploads" });
+// const upload = multer({ dest: "./uploads" });
 
 let asyncHandler = (requestHandler) => {
   return (req, res, next) => {
@@ -61,15 +61,31 @@ let uploadHandler = asyncHandler(async (req, res) => {
 });
 // Endpoint for uploading image
 
-app.post(
-  "/upload2",
-  (req, res, next) => {
-    console.log("req.file is", req.file, req.files);
-    next();
+// app.post(
+//   "/upload2",
+//   (req, res, next) => {
+//     console.log("req.file is", req.file, req.files);
+//     next();
+//   },
+//   upload.single("image"),
+//   uploadHandler
+// );
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    try {
+      cb(null, "/uploads");
+    } catch (error) {
+      console.log("error in destination", error);
+      cb(error);
+    }
   },
-  upload.single("image"),
-  uploadHandler
-);
+  filename: function (req, file, cb) {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+
+const upload = multer({ storage: storage });
 
 app.post("/upload", upload.single("profileImage"), (req, res) => {
   console.log("req.file is", req.file);
