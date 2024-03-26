@@ -15,6 +15,9 @@ dotenv.config({ path: "../.env" });
 
 const uploadOnCloudinary = require("./cloudinary").uploadOnCloudinary;
 
+
+
+
 let asyncHandler = (requestHandler) => {
   return (req, res, next) => {
     Promise.resolve(requestHandler(req, res, next)).catch(next);
@@ -60,30 +63,27 @@ const storage = multer.diskStorage({
     }
   },
   filename: function (req, file, cb) {
-    // file.originalname = file.originalname.replace(" ", "_");
-    // file.originalname = file.originalname.replace("/", "_");
-    // file.originalname = file.originalname.replace("\\", "_");
-    // file.originalname = file.originalname.replace("-", "_");
-    // // These should be good enough for  now. May add more later
-    
-    // a function to replace the regex of all the symbols with the _ in the file.originalname
+    // to ensure the correct filename while preserving the file extension
+    let lastDot = file.originalname.lastIndexOf(".");
+    let fileName = file.originalname.substring(0, lastDot);
+    let fileExtension = file.originalname.substring(lastDot + 1);
+    // a function to replace the regex of all the symbols with the _ in the filename
     const replaceSpecialChars = () => {
-      file.originalname= file.originalname.replace(/[\W]+/g, '_'); 
-    }
-    replaceSpecialChars()
+      fileName = fileName.replace(/[\W]+/g, "_");
+    };
+    replaceSpecialChars();
 
-    let filenameSplit = file.originalname.split(".");
     let usrImgType;
     // I have done this to uniquely identify
     // As per the utility logic which img is this.
-    if(file.fieldname === "profileImage"){
+    if (file.fieldname === "profileImage") {
       usrImgType = "pfp";
-    }else{
+    } else {
       usrImgType = "gly";
     }
     // Also this -& is used here bcs its a lesser used character in names
     // Because if a user uses - in name it will be tough to see which one is which
-    let newFileName = `${filenameSplit[0]}-&${usrImgType}-&${Date.now()}.${filenameSplit[1]}`;
+    let newFileName = `${fileName}-&${usrImgType}-&${Date.now()}.${fileExtension}`;
     cb(null, `${newFileName}`);
   },
 });
@@ -94,11 +94,37 @@ const imageFields = [
   { name: "profileImage", maxCount: 1 },
   { name: "galleryImages", maxCount: 5 },
 ];
-app.post("/upload", upload.fields(imageFields), (req, res) => {
-  console.log("req.file is", req.files);
-  console.log("body is", req.body);
-  // I want to redirect the user back to the previous page on client side
-  return res.redirect("http://127.0.0.1:5500/client/index.html");
+
+app.post(
+  "/upload",
+  upload.fields(imageFields),
+  (err, req, res) => {
+    if (err) {
+      console.log("error in the post route", err);
+      return res.status(500).json({ error: "Failed to upload image" });
+    }
+    console.log("req.file is", req.files);
+    console.log("body is", req.body);
+    // I want to redirect the user back to the previous page on client side
+    return res.redirect("http://127.0.0.1:5500/client/index.html");
+  }
+);
+
+// Error handling middleware for multer
+app.use(function (err, req, res, next) {
+  if (err instanceof multer.MulterError) {
+    // Multer error handling
+    if (err.code === "LIMIT_UNEXPECTED_FILE") {
+      console.log("Error:", err); // Log the error for debugging
+      return res.status(400).json({ error: "Unexpected field", errorCode: err.code });
+    }
+    return res.status(500).json({ error: "Multer error", errorCode: err.code });
+  } else if (err) {
+    // Other errors
+    console.error("Error:", err); // Log the error for debugging
+    return res.status(500).json({ error: "Failed to upload image" });
+  }
+  next();
 });
 
 const PORT = process.env.PORT || 5000;
