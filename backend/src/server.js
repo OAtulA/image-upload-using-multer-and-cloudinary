@@ -60,16 +60,42 @@ const storage = multer.diskStorage({
     }
   },
   filename: function (req, file, cb) {
+    // file.originalname = file.originalname.replace(" ", "_");
+    // file.originalname = file.originalname.replace("/", "_");
+    // file.originalname = file.originalname.replace("\\", "_");
+    // file.originalname = file.originalname.replace("-", "_");
+    // // These should be good enough for  now. May add more later
+    
+    // a function to replace the regex of all the symbols with the _ in the file.originalname
+    const replaceSpecialChars = () => {
+      file.originalname= file.originalname.replace(/[\W]+/g, '_'); 
+    }
+    replaceSpecialChars()
+
     let filenameSplit = file.originalname.split(".");
-    let newFileName = `${filenameSplit[0]}-${Date.now()}.${filenameSplit[1]}`;
+    let usrImgType;
+    // I have done this to uniquely identify
+    // As per the utility logic which img is this.
+    if(file.fieldname === "profileImage"){
+      usrImgType = "pfp";
+    }else{
+      usrImgType = "gly";
+    }
+    // Also this -& is used here bcs its a lesser used character in names
+    // Because if a user uses - in name it will be tough to see which one is which
+    let newFileName = `${filenameSplit[0]}-&${usrImgType}-&${Date.now()}.${filenameSplit[1]}`;
     cb(null, `${newFileName}`);
   },
 });
 
 const upload = multer({ storage: storage });
 
-app.post("/upload", upload.single("profileImage"), (req, res) => {
-  console.log("req.file is", req.file);
+const imageFields = [
+  { name: "profileImage", maxCount: 1 },
+  { name: "galleryImages", maxCount: 5 },
+];
+app.post("/upload", upload.fields(imageFields), (req, res) => {
+  console.log("req.file is", req.files);
   console.log("body is", req.body);
   // I want to redirect the user back to the previous page on client side
   return res.redirect("http://127.0.0.1:5500/client/index.html");

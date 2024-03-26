@@ -14,51 +14,23 @@
         action="http://localhost:5000/upload"
         method="POST"
       >
-        <input type="file" accept="image/*" id="image-input" name="profileImage" />
+        <input
+          type="file"
+          accept="image/*"
+          id="image-input"
+          name="profileImage"
+        /><br /><br />
+        <!-- to upload at most 5 images with name galleryImage -->
+        <input
+          type="file"
+          accept="image/*"
+          id="gallery-input"
+          name="galleryImages"
+          multiple
+        />
         <button type="submit">Upload</button>
       </form>
       <div id="preview-image"></div>
     </div>
-
-    <!-- <script>
-      let base_url = "http:localhost:7000";
-      document
-        .getElementById("image-form")
-        .addEventListener("submit", async function (event) {
-          event.preventDefault(); // Prevent default form submission
-
-          const fileInput = document.getElementById("image-input");
-          const file = fileInput.files[0];
-
-          if (!file) {
-            alert("Please select an image file.");
-            return;
-          }
-
-          const formData = new FormData();
-          formData.append("file", file);
-
-          try {
-            const response = await fetch("http://localhost:5000/upload", {
-              method: "POST",
-              body: formData,
-            });
-
-            if (!response.ok) {
-              throw new Error("Failed to upload image");
-            }
-
-            const data = await response.json();
-            console.log("Image uploaded:", data.imageUrl);
-
-            // Display uploaded image
-            const previewImage = document.getElementById("preview-image");
-            previewImage.innerHTML = `<img src="${data.imageUrl}" alt="Uploaded Image">`;
-          } catch (error) {
-            console.error("Failed to upload image:", error);
-            alert("Failed to upload image");
-          }
-        });
-    </script> -->
   </body>
 </html>
