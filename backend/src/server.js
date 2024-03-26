@@ -15,9 +15,6 @@ dotenv.config({ path: "../.env" });
 
 const uploadOnCloudinary = require("./cloudinary").uploadOnCloudinary;
 
-
-
-
 let asyncHandler = (requestHandler) => {
   return (req, res, next) => {
     Promise.resolve(requestHandler(req, res, next)).catch(next);
@@ -72,6 +69,7 @@ const storage = multer.diskStorage({
       fileName = fileName.replace(/[\W]+/g, "_");
     };
     replaceSpecialChars();
+    file.originalname = fileName+'.'+fileExtension;
 
     let usrImgType;
     // I have done this to uniquely identify
@@ -95,28 +93,51 @@ const imageFields = [
   { name: "galleryImages", maxCount: 5 },
 ];
 
-app.post(
-  "/upload",
-  upload.fields(imageFields),
-  (err, req, res) => {
-    if (err) {
-      console.log("error in the post route", err);
-      return res.status(500).json({ error: "Failed to upload image" });
+// function to upload to cloudinary.
+// Lets first check it.
+
+let tempUploaderToCloudinary = async (req, res, next) => {
+  try {
+    // checks if pfp is present in the req.files
+    let pfp = req.files.profileImage;
+    if (pfp) {
+      // Lets just print its path
+      console.log("image:", pfp.originalname, "img.path", pfp[0].path);
     }
-    console.log("req.file is", req.files);
-    console.log("body is", req.body);
-    // I want to redirect the user back to the previous page on client side
-    return res.redirect("http://127.0.0.1:5500/client/index.html");
+    // checks if gly is present in the req.files
+    console.log("gallery images");
+    let glryImages = req.files.galleryImages;
+    if (glryImages) {
+      // Lets just print its path
+      glryImages.forEach((image, i) => {
+        console.log("image", image.originalname, "image.path", i, image.path);
+      });
+    }
+  } catch (err) {
+    console.log("error in tempUploaderToCloudinary", err);
   }
-);
+};
+
+app.post("/upload", upload.fields(imageFields), (req, res) => {
+  // if (err) {
+  //   console.log("error in the post route", err);
+  //   return res.status(500).json({ error: "Failed to upload image" });
+  // }
+  console.log("req.file is", req.files);
+  console.log("body is", req.body);
+  // I want to redirect the user back to the previous page on client side
+  return res.redirect("http://127.0.0.1:5500/client/index.html");
+});
 
 // Error handling middleware for multer
-app.use(function (err, req, res, next) {
+app.use("/upload", function (err, req, res, next) {
   if (err instanceof multer.MulterError) {
     // Multer error handling
     if (err.code === "LIMIT_UNEXPECTED_FILE") {
       console.log("Error:", err); // Log the error for debugging
-      return res.status(400).json({ error: "Unexpected field", errorCode: err.code });
+      return res
+        .status(400)
+        .json({ error: "Unexpected field", errorCode: err.code });
     }
     return res.status(500).json({ error: "Multer error", errorCode: err.code });
   } else if (err) {
