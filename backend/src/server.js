@@ -74,7 +74,7 @@ let uploadHandler = asyncHandler(async (req, res) => {
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     try {
-      cb(null, "/uploads");
+      cb(null, "./uploads");
     } catch (error) {
       console.log("error in destination", error);
       cb(error);
