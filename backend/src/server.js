@@ -7,30 +7,33 @@ const cors = require("cors");
 const app = express();
 app.use(cors());
 app.use(express.json());
+// Helps parse form
 app.use(express.urlencoded({ extended: true }));
 
-dotenv.config({path: "../.env"});
+dotenv.config({ path: "../.env" });
 
 const uploadOnCloudinary = require("./cloudinary").uploadOnCloudinary;
 
 // Configure Multer to save files to the public/temp folder
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "./public/temp");
-  },
-  filename: function (req, file, cb) {
-    let uploadFilename = file.originalname;
-    uploadFilename =
-      uploadFilename.split(".")[0] +
-      "-" +
-      Math.floor(Date.now() / 1000) +
-      "." +
-      file.originalname.split(".")[1];
-    console.log("uploadFilename is", uploadFilename);
-    cb(null, uploadFilename);
-  },
-});
-const upload = multer({ storage: storage });
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     cb(null, "./public/temp");
+//   },
+//   filename: function (req, file, cb) {
+//     let uploadFilename = file.originalname;
+//     uploadFilename =
+//       uploadFilename.split(".")[0] +
+//       "-" +
+//       Math.floor(Date.now() / 1000) +
+//       "." +
+//       file.originalname.split(".")[1];
+//     console.log("uploadFilename is", uploadFilename);
+//     cb(null, uploadFilename);
+//   },
+// });
+// const upload = multer({ storage: storage });
+
+const upload = multer({ dest: "./uploads" });
 
 let asyncHandler = (requestHandler) => {
   return (req, res, next) => {
@@ -52,14 +55,14 @@ let uploadHandler = asyncHandler(async (req, res) => {
     // Send response with Cloudinary image URL
     res.json({ imageUrl: avatar.url });
   } catch (error) {
-    console.error("Error in the uploadHandler",error);
+    console.error("Error in the uploadHandler", error);
     res.status(500).json({ error: "Failed to upload image" });
   }
 });
 // Endpoint for uploading image
 
 app.post(
-  "/upload",
+  "/upload2",
   (req, res, next) => {
     console.log("req.file is", req.file, req.files);
     next();
@@ -67,6 +70,13 @@ app.post(
   upload.single("image"),
   uploadHandler
 );
+
+app.post("/upload", upload.single("profileImage"), (req, res) => {
+  console.log("req.file is", req.file);
+  console.log("body is", req.body);
+  // I want to redirect the user back to the previous page
+  return res.redirect("http://127.0.0.1:5500/client/index.html");
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
