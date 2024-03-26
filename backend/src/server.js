@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
+const fs = require("fs");
 
 const app = express();
 app.use(cors());
@@ -13,27 +14,6 @@ app.use(express.urlencoded({ extended: true }));
 dotenv.config({ path: "../.env" });
 
 const uploadOnCloudinary = require("./cloudinary").uploadOnCloudinary;
-
-// Configure Multer to save files to the public/temp folder
-// const storage = multer.diskStorage({
-//   destination: function (req, file, cb) {
-//     cb(null, "./public/temp");
-//   },
-//   filename: function (req, file, cb) {
-//     let uploadFilename = file.originalname;
-//     uploadFilename =
-//       uploadFilename.split(".")[0] +
-//       "-" +
-//       Math.floor(Date.now() / 1000) +
-//       "." +
-//       file.originalname.split(".")[1];
-//     console.log("uploadFilename is", uploadFilename);
-//     cb(null, uploadFilename);
-//   },
-// });
-// const upload = multer({ storage: storage });
-
-// const upload = multer({ dest: "./uploads" });
 
 let asyncHandler = (requestHandler) => {
   return (req, res, next) => {
@@ -61,27 +41,28 @@ let uploadHandler = asyncHandler(async (req, res) => {
 });
 // Endpoint for uploading image
 
-// app.post(
-//   "/upload2",
-//   (req, res, next) => {
-//     console.log("req.file is", req.file, req.files);
-//     next();
-//   },
-//   upload.single("image"),
-//   uploadHandler
-// );
-
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     try {
+      // creating the folder uploads/temp
+      // if the folder does not exist it will create it
+      const tempUploadFolderName = "./uploads/temp";
+      if (!fs.existsSync(tempUploadFolderName)) {
+        fs.mkdirSync(tempUploadFolderName, { recursive: true });
+      }
       cb(null, "./uploads/temp");
+      // Now for this to work I need to create a folder called uploads/temp manually
+      // if its just one level multer does it for us
+      // for recursive structure we need to create it manually or via scripting
     } catch (error) {
       console.log("error in destination", error);
       cb(error);
     }
   },
   filename: function (req, file, cb) {
-    cb(null, `${Date.now()}-${file.originalname}`);
+    let filenameSplit = file.originalname.split(".");
+    let newFileName = `${filenameSplit[0]}-${Date.now()}.${filenameSplit[1]}`;
+    cb(null, `${newFileName}`);
   },
 });
 
@@ -90,7 +71,7 @@ const upload = multer({ storage: storage });
 app.post("/upload", upload.single("profileImage"), (req, res) => {
   console.log("req.file is", req.file);
   console.log("body is", req.body);
-  // I want to redirect the user back to the previous page
+  // I want to redirect the user back to the previous page on client side
   return res.redirect("http://127.0.0.1:5500/client/index.html");
 });
 
