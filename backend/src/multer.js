@@ -1,4 +1,6 @@
 const multer = require("multer");
+const uploadOnCloudinary = require("./cloudinary").uploadOnCloudinary;
+const fs = require("fs");
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -62,25 +64,29 @@ let UploaderToCloudinary = async (req, res, next) => {
     if (pfp) {
       // Lets just print its path
       console.log("image:", pfp[0].originalname, "img.path", pfp[0].path);
-      uploadOnCloudinary(pfp[0].path);
+      await uploadOnCloudinary(pfp[0].path);
     }
     // checks if gly is present in the req.files
     console.log("gallery images");
     let glryImages = req.files.galleryImages;
     if (glryImages) {
       // Lets just print its path
-      glryImages.forEach((image, i) => {
+      glryImages.forEach(async (image, i) => {
         console.log("image", image.originalname, "image.path", i, image.path);
-        uploadOnCloudinary(image.path);
+        // This is the function to upload the images to cloudinary
+        // It also returns the response. So you could add response.url to the database
+        await uploadOnCloudinary(image.path);
       });
     }
+    next();
   } catch (err) {
     console.log("error in UploaderToCloudinary", err);
+    next(err);
   }
 };
 
 let fileUploadHandler = async (req, res, next) => {
-  upload.fields(imageFields);
+  upload.fields(imageFields)(req, res, next);
 };
 let multerErrorHandler = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
@@ -102,5 +108,5 @@ let multerErrorHandler = (err, req, res, next) => {
 module.exports = {
   fileUploadHandler,
   UploaderToCloudinary,
-  multerErrorHandler
+  multerErrorHandler,
 };

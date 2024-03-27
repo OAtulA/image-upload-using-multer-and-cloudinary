@@ -21,9 +21,17 @@ let asyncHandler = (requestHandler) => {
   };
 };
 
-const {fileUploadHandler, UploaderToCloudinary, multerErrorHandler} = require("./multer");
+const {
+  fileUploadHandler,
+  UploaderToCloudinary,
+  multerErrorHandler,
+} = require("./multer");
 app.post(
   "/upload",
+  (req, res, next) => {
+    console.log("req recieved");
+    next();
+  },
   fileUploadHandler,
   UploaderToCloudinary,
   (req, res) => {
@@ -31,16 +39,21 @@ app.post(
     //   console.log("error in the post route", err);
     //   return res.status(500).json({ error: "Failed to upload image" });
     // }
-    // console.log("req.file is", req.files);
+    console.log("req.file is", req.files);
     console.log("body is", req.body);
+    res.status(200).json({
+      message: "Image uploaded successfully",
+      body: req.body,
+      files: req.files,
+    });
     // I want to redirect the user back to the previous page on client side
     // So it was on live server you may want to use vite then change the port
-    return res.redirect("http://127.0.0.1:5500/client/index.html");
+    // return res.redirect("http://127.0.0.1:5500/client/index.html");
   }
 );
 
 // Error handling middleware for multer
-app.use("/upload", multerErrorHandler);
+app.use(multerErrorHandler);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>

@@ -16,12 +16,13 @@
   <body>
     <div id="upload-form">
       <h2>Upload Image</h2>
-      <form
+      <!-- <form
         id="image-form"
         enctype="multipart/form-data"
         action="http://localhost:5000/upload"
         method="POST"
-      >
+      > -->
+      <form id="image-form" enctype="multipart/form-data">
         <input
           type="file"
           accept="image/*"
@@ -41,4 +42,30 @@
       <div id="preview-image"></div>
     </div>
   </body>
+  <script>
+    const form = document.getElementById("image-form");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+
+      try {
+        const response = await fetch("http://localhost:5000/upload", {
+          method: "POST",
+          body: formData,
+        });
+        console.log("request made")
+
+        if (!response.ok) {
+          throw new Error("Upload failed");
+        }
+
+        // redirect back after successful upload
+        // window.location.href = "/success.html";
+      } catch (error) {
+        console.error(error);
+      }
+    });
+  </script>
 </html>
