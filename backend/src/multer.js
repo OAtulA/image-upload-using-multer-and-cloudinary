@@ -10,6 +10,17 @@ let asyncHandler = (requestHandler) => {
   };
 };
 
+let fileTypeFilterMiddleware = (req, file, cb) => {
+  if (
+    file.mimetype.startsWith("image/") ||
+    file.mimetype === "application/pdf"
+  ) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only images and pdfs are allowed"), false);
+  }
+};
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     try {
@@ -55,7 +66,11 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 11_000_000 }, //10MB approx
+  fileFilter: fileTypeFilterMiddleware,
+});
 
 const imageFields = [
   { name: "profileImage", maxCount: 1 },
