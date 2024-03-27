@@ -11,7 +11,7 @@ app.use(express.json());
 // Helps parse form
 app.use(express.urlencoded({ extended: true }));
 
-dotenv.config({ path: "../.env" });
+dotenv.config({ path: ".env" });
 
 const uploadOnCloudinary = require("./cloudinary").uploadOnCloudinary;
 

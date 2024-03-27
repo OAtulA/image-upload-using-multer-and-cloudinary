@@ -84,6 +84,10 @@ npm run dev
 
 Just find the `index.html` in the `client/index.html` and open it in your vs code via live server.
 
+Also at `line no. 54` change the port to the `PORT` you are using for the backend.  
+`http://localhost:5000/upload` here put the port of the backend.  
+i.e. You give in the `.env` file
+
 ## Contributing
 
 Pull requests are welcome.
