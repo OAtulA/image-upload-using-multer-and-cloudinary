@@ -1,6 +1,14 @@
 const multer = require("multer");
 const uploadOnCloudinary = require("./cloudinary").uploadOnCloudinary;
 const fs = require("fs");
+let asyncHandler = (requestHandler) => {
+  return (req, res, next) => {
+    Promise.resolve(requestHandler(req, res, next)).catch((err) => {
+      console.log("error is ", err);
+      next(err);
+    });
+  };
+};
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -57,33 +65,51 @@ const imageFields = [
 // function to upload to cloudinary.
 // Lets first check it.
 
-let UploaderToCloudinary = async (req, res, next) => {
+let UploaderToCloudinary = asyncHandler(async (req, res, next) => {
   try {
     // checks if pfp is present in the req.files
     let pfp = req.files.profileImage;
     if (pfp) {
       // Lets just print its path
       console.log("image:", pfp[0].originalname, "img.path", pfp[0].path);
-      await uploadOnCloudinary(pfp[0].path);
+      let uploadResponseCloudinary = await uploadOnCloudinary(pfp[0].path);
+      pfp[0].imgURL = uploadResponseCloudinary.url;
     }
     // checks if gly is present in the req.files
     console.log("gallery images");
     let glryImages = req.files.galleryImages;
     if (glryImages) {
+      // Comment left deliberately to remember later
+      //
+
       // Lets just print its path
-      glryImages.forEach(async (image, i) => {
-        console.log("image", image.originalname, "image.path", i, image.path);
-        // This is the function to upload the images to cloudinary
-        // It also returns the response. So you could add response.url to the database
-        await uploadOnCloudinary(image.path);
-      });
+      // glryImages.forEach(async (image, i) => {
+      //   console.log("image", image.originalname, "image.path", i, image.path);
+      //   // This is the function to upload the images to cloudinary
+      //   // It also returns the response. So you could add response.url to the database
+      //   let uploadResponseCloudinary = await uploadOnCloudinary(image.path);
+      //   glryImages[i].imgURL = uploadResponseCloudinary.url;
+      // });
+      for (let i = 0; i < glryImages.length; i++) {
+        console.log(
+          "image",
+          glryImages[i].originalname,
+          "image.path",
+          i,
+          glryImages[i].path
+        );
+        let uploadResponseCloudinary = await uploadOnCloudinary(
+          glryImages[i].path
+        );
+        glryImages[i].imgURL = uploadResponseCloudinary.url;
+      }
     }
     next();
   } catch (err) {
     console.log("error in UploaderToCloudinary", err);
     next(err);
   }
-};
+});
 
 let fileUploadHandler = async (req, res, next) => {
   upload.fields(imageFields)(req, res, next);

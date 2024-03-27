@@ -56,6 +56,7 @@
           body: formData,
         });
         console.log("request made")
+        console.log("response is:", response.json());
 
         if (!response.ok) {
           throw new Error("Upload failed");

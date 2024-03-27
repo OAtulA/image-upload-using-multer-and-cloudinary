@@ -26,6 +26,11 @@ const {
   UploaderToCloudinary,
   multerErrorHandler,
 } = require("./multer");
+
+// You may want to add one more middleware after the UploaderToCloudinary
+// To save these images to the database
+// You may do so by iterating the req.files and saving the url to the database
+// It will be on the req.files.Field_name[index].imgURL
 app.post(
   "/upload",
   (req, res, next) => {
@@ -53,6 +58,8 @@ app.post(
 );
 
 // Error handling middleware for multer
+// Its necessary to add it after the multer function
+// as it is put in any route as it will catch all the errors
 app.use(multerErrorHandler);
 
 const PORT = process.env.PORT || 5000;

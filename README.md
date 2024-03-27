@@ -51,22 +51,33 @@ I have left the [.env.sample](backend/.env.sample) for your refrence
   ];
   ```
 
-- cloudinary.js file
-  you can see at `line no. 20` I have  
-  `console.log("file is uploaded on cloudinary ", response.url)`  
-  Now you need to make a function to save this url to you database and  
-  just call it below this and pass the response.url  
-  It should do the job.  
+- server.js file
+  you can see at `line no. 34 to 41`  
+  Now you need to make a middleware function to save this url to you database and  
+  just put it after the `UploaderToCloudinary`
+
+  To save these images to the database  
+  You may do so by iterating the req.files and saving the url to the database  
+  It will be on the req.files.Field_name[index].imgURL
+
+  It should do the job.
 
 ## Setup
 
 I have used node version 21 It will work with node 20 too. If you
 are using below it. Install nodemon and change the `dev script` in the
 `package.json`. You are good to go. Just clone or download this repo. open the
-repo folder on the system. ### Backend just copy these commands **_I personally
-like pnmp_** So you may do a `alias npm="pnpm"` first ```sh cd backend npm i npm
-run dev
+repo folder on the system.
 
+### Backend just copy these commands
+
+**_I personally like pnmp_**  
+So you may do a `alias npm="pnpm"` first
+
+```sh
+cd backend
+npm i
+npm run dev
 ```
 
 ### Frontend
@@ -79,4 +90,3 @@ Pull requests are welcome.
 For major changes, please open an issue first to discuss what you would like to change.
 
 You are free to contribute anything you like.
-```
