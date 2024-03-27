@@ -44,7 +44,7 @@ let filenameSplit = file.originalname.split(".");
 ### Awesome feature
 
 If I want I can upload just one image field.  
-It will not give errors.  
+It will not give errors.
 
 ### EdgeCase
 
@@ -55,5 +55,14 @@ Converted its name to `simps_on_1_3_rd_output_png-&pfp-&1711478831291.undefined`
 With slight modification it is fine now.
 
 ```JS
-
+// to ensure the correct filename while preserving the file extension
+    let lastDot = file.originalname.lastIndexOf(".");
+    let fileName = file.originalname.substring(0, lastDot);
+    let fileExtension = file.originalname.substring(lastDot + 1);
+    // a function to replace the regex of all the symbols with the _ in the filename
+    const replaceSpecialChars = () => {
+      fileName = fileName.replace(/[\W]+/g, "_");
+    };
+    replaceSpecialChars();
+    file.originalname = fileName + "." + fileExtension;
 ```
