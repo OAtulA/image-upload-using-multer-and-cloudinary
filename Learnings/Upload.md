@@ -14,6 +14,11 @@ In technical terms its unlink.
 
 We will use disk storage so that ram does not fills up.
 
+We need to once upload all the files.  
+Then we can apply a middleware to add any filter condition  
+whether we want to restrict the file size of each image  
+or say upload only one pdf in gallery.
+
 ### Setting our own patterns to have good file names
 
 ```JS
@@ -65,4 +70,37 @@ With slight modification it is fine now.
     };
     replaceSpecialChars();
     file.originalname = fileName + "." + fileExtension;
+```
+
+## Removing temp files
+
+I created a functiont to remove the temp files.  
+Be it on error or be it on say not fulfuilling our criteria.  
+
+```JS
+let removeTempFiles = (req, res, next) => {
+  try {
+    let profileImage = req.files.profileImage;
+    let galleryImages = req.files.galleryImages;
+    if (profileImage) {
+      try {
+        fs.unlinkSync(profileImage[0].path);
+      } catch (error) {
+        console.log("error in removing profile image", error.message);
+      }
+    }
+    if (galleryImages) {
+      for (image in galleryImages) {
+        try {
+          fs.unlinkSync(image.path);
+        } catch (error) {
+          console.log("error in removing gallery image", error.message);
+        }
+      }
+    }
+    console.log("\n", "temp files removed :)", "\n");
+  } catch (error) {
+    console.log("\nerror in removeTempFiles\n", error);
+  }
+};
 ```
