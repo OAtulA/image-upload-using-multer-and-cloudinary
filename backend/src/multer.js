@@ -10,20 +10,27 @@ let asyncHandler = (requestHandler) => {
   };
 };
 
-let fileTypeFilterMiddleware = (req, file, cb) => {
+let fileTypeFilterMiddleware = function (req, file, cb) {
+  // There is no req.files at this stage.
   if (
-    file.mimetype.startsWith("image/") ||
-    file.mimetype === "application/pdf"
+    file.mimetype === "application/pdf" ||
+    file.mimetype.startsWith("image/")
   ) {
     cb(null, true);
   } else {
-    cb(new Error("Only images and pdfs are allowed"), false);
+    cb(
+      new Error("Only 1 PDF or 5 images maxsize 5mb files are allowed"),
+      false
+    );
   }
 };
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     try {
+      // console.log('\n', 'Multer diskstorage reached ')
+      // console.log('\n file is', file, '\n req.files is ', req.files, '\n');
+      // console.log()
       // creating the folder uploads/temp
       // if the folder does not exist it will create it
       const tempUploadFolderName = "./uploads/temp";
@@ -68,7 +75,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 11_000_000 }, //10MB approx
+  limits: { fileSize: 12_00_000 }, //10MB approx
   fileFilter: fileTypeFilterMiddleware,
 });
 
@@ -129,7 +136,62 @@ let UploaderToCloudinary = asyncHandler(async (req, res, next) => {
 let fileUploadHandler = async (req, res, next) => {
   upload.fields(imageFields)(req, res, next);
 };
+
+let removeTempFiles = (req, res, next) => {
+  try {
+    let profileImage = req.files.profileImage;
+    let galleryImages = req.files.galleryImages;
+    if (profileImage) {
+      try {
+        fs.unlinkSync(profileImage[0].path);
+      } catch (error) {
+        console.log("error in removing profile image", error.message);
+      }
+    }
+    if (galleryImages) {
+      for (image in galleryImages) {
+        try {
+          fs.unlinkSync(image.path);
+        } catch (error) {
+          console.log("error in removing gallery image", error.message);
+        }
+      }
+    }
+    console.log("\n", "temp files removed :)", "\n");
+  } catch (error) {
+    console.log("\nerror in removeTempFiles\n", error);
+  }
+};
+
+// So this is a file filter to check if only 1 pdf or multiple images are allowed
+let logicalFileFilter = async (req, res, next) => {
+  try {
+    if (req.files.profileImage) {
+      if (req.files.profileImage.length > 1) {
+        return new Error("400|Only one profile image is allowed");
+      }
+    }
+    // we don't allow more than 5 images in gallery
+    if (req.files.galleryImages) {
+      if (req.files.galleryImages.length > 5) {
+        // make an error with the message
+        return new Error("400|Only 5 images are allowed");
+      }
+      // checks if only 1 pdf or multiple images are allowed
+      if (req.files.galleryImages.length > 1) {
+        return new Error("400|Only 1 pdf or 5 images allowed");
+      }
+    }
+  } catch (err) {
+    removeTempFiles(req, res, next);
+    let errorMesage = err.message.split("|");
+    res.status(errorMesage[0]).json({ error: errorMesage[1] });
+  }
+};
+
 let multerErrorHandler = (err, req, res, next) => {
+  // to clean the files from the disk
+  removeTempFiles(req, res, next);
   if (err instanceof multer.MulterError) {
     // Multer error handling
     if (err.code === "LIMIT_UNEXPECTED_FILE") {
@@ -150,4 +212,5 @@ module.exports = {
   fileUploadHandler,
   UploaderToCloudinary,
   multerErrorHandler,
+  logicalFileFilter,
 };
