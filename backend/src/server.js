@@ -25,6 +25,7 @@ const {
   fileUploadHandler,
   UploaderToCloudinary,
   multerErrorHandler,
+  logicalFileFilter,
 } = require("./multer");
 
 // You may want to add one more middleware after the UploaderToCloudinary
@@ -38,7 +39,9 @@ app.post(
     next();
   },
   fileUploadHandler,
+  // logicalFileFilter,
   UploaderToCloudinary,
+
   (req, res) => {
     // if (err) {
     //   console.log("error in the post route", err);

@@ -75,7 +75,12 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 12_00_000 }, //10MB approx
+  limits: {
+    fileSize:
+      process.env.MAX_FILE_SIZE <= 10_300_000
+        ? process.env.MAX_FILE_SIZE
+        : 10_300_000,
+  }, //10MB approx
   fileFilter: fileTypeFilterMiddleware,
 });
 
@@ -134,7 +139,9 @@ let UploaderToCloudinary = asyncHandler(async (req, res, next) => {
 });
 
 let fileUploadHandler = async (req, res, next) => {
-  upload.fields(imageFields)(req, res, next);
+  try {
+    upload.fields(imageFields)(req, res, next);
+  } catch (error) {}
 };
 
 let removeTempFiles = (req, res, next) => {
@@ -149,7 +156,7 @@ let removeTempFiles = (req, res, next) => {
       }
     }
     if (galleryImages) {
-      for (image in galleryImages) {
+      for (image of galleryImages) {
         try {
           fs.unlinkSync(image.path);
         } catch (error) {
@@ -166,6 +173,7 @@ let removeTempFiles = (req, res, next) => {
 // So this is a file filter to check if only 1 pdf or multiple images are allowed
 let logicalFileFilter = async (req, res, next) => {
   try {
+    // only 1 profile image
     if (req.files.profileImage) {
       if (req.files.profileImage.length > 1) {
         return new Error("400|Only one profile image is allowed");
@@ -179,9 +187,14 @@ let logicalFileFilter = async (req, res, next) => {
       }
       // checks if only 1 pdf or multiple images are allowed
       if (req.files.galleryImages.length > 1) {
-        return new Error("400|Only 1 pdf or 5 images allowed");
+        for (let i = 0; i < req.files.galleryImages.length; i++) {
+          if (req.files.galleryImages[i].mimetype !== "image/jpeg") {
+            return new Error("400|Only 1 pdf or 5 images allowed");
+          }
+        }
       }
     }
+    next();
   } catch (err) {
     removeTempFiles(req, res, next);
     let errorMesage = err.message.split("|");
@@ -191,6 +204,7 @@ let logicalFileFilter = async (req, res, next) => {
 
 let multerErrorHandler = (err, req, res, next) => {
   // to clean the files from the disk
+  console.log("\n error in multerErrorHandler \n", err.message);
   removeTempFiles(req, res, next);
   if (err instanceof multer.MulterError) {
     // Multer error handling

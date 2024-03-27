@@ -9,6 +9,7 @@ So that if upload fails we can reattempt.
 ### deleting file
 
 In technical terms its unlink.
+`fs.unlinkSync` blocks the event loop  
 
 ### saving the file
 
